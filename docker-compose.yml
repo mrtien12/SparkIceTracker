@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://vietin_user:vietin_password@postgres:5432/vietinbank_db
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vietinbank-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: vietinbank_db
+      POSTGRES_USER: vietin_user
+      POSTGRES_PASSWORD: vietin_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vietin_user -d vietinbank_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vietinbank-network
+
+volumes:
+  postgres_data:
+
+networks:
+  vietinbank-network:
+    driver: bridge
