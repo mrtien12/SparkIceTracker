@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { generateRandomPassword, hashPassword } from "./auth";
+import { generateRandomPassword } from "./auth";
 import { type CreateUserRequest } from "@shared/schema";
 
 /**
@@ -16,15 +16,14 @@ export async function createUserWithRandomPassword(userData: CreateUserRequest):
 
     // Generate random password
     const plainPassword = generateRandomPassword(12);
-    const hashedPassword = await hashPassword(plainPassword);
 
-    // Create user
+    // Create user with plain text password
     const user = await storage.createUser({
       username: userData.username,
-      password: hashedPassword
+      password: plainPassword
     });
 
-    // Return user (without password hash) and plain password
+    // Return user and plain password
     return {
       user: {
         id: user.id,

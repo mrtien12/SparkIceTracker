@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language.
 
 ✅ **Authentication System Implementation**: 
 - Added complete user authentication with login/logout functionality
-- Implemented secure password hashing using bcrypt (12 salt rounds)
+- Implemented plain text password storage with 12-character random generation
 - Created session-based authentication with Bearer tokens
 - Added user-specific data isolation for Spark jobs and Iceberg tables
 - Built professional login interface with VietinBank branding
@@ -55,7 +55,7 @@ The application follows a modern full-stack architecture with clear separation b
 - **Database**: PostgreSQL (configured for Neon serverless)
 - **Schema Management**: Drizzle migrations
 - **Connection**: Connection pooling with @neondatabase/serverless
-- **Authentication**: Session-based authentication with bcrypt password hashing
+- **Authentication**: Session-based authentication with plain text passwords
 - **Data Isolation**: User-specific data access with foreign key relationships
 
 ## Key Components
@@ -65,7 +65,7 @@ The application manages three main entities:
 
 1. **Users** (`users` table):
    - Username (unique identifier, 3-50 characters)
-   - Password (bcrypt hashed with 12 salt rounds)
+   - Password (plain text, 12-character randomly generated)
    - Used for authentication and data isolation
 
 2. **Spark Jobs** (`spark_jobs` table):

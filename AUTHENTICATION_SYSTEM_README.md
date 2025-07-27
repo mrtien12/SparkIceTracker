@@ -10,9 +10,9 @@ This document provides a comprehensive guide for the authentication system imple
 
 #### 1. Authentication Middleware (`server/auth.ts`)
 - **JWT-like Session Management**: Uses secure session tokens stored in memory
-- **Password Hashing**: Uses bcrypt with 12 salt rounds for secure password storage
+- **Password Storage**: Uses plain text 12-character randomly generated passwords
 - **Session Management**: In-memory session store with token-based authentication
-- **Password Generation**: Automatically generates 12-character secure passwords
+- **Password Generation**: Automatically generates 12-character plain text passwords
 
 #### 2. User Management (`server/admin-utils.ts`)
 - **Admin User Creation**: Creates users with randomly generated passwords
@@ -115,9 +115,9 @@ VALUES ('username', '$2a$12$hashedPasswordHere');
 ## Security Features
 
 ### Password Security
-- **BCrypt Hashing**: 12 salt rounds for maximum security
-- **Random Generation**: 12-character passwords with mixed character types
-- **No Plain Text Storage**: Passwords are never stored in plain text
+- **Plain Text Storage**: 12-character randomly generated passwords stored as plain text
+- **Random Generation**: 12-character passwords with mixed character types (letters, numbers, symbols)
+- **Simple Authentication**: Direct password comparison for login validation
 
 ### Session Security
 - **Token-Based Authentication**: Secure session tokens

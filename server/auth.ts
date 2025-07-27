@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+
 import { type Request, type Response, type NextFunction } from "express";
 import { storage } from "./storage";
 
@@ -12,15 +12,9 @@ export function generateRandomPassword(length = 12): string {
   return password;
 }
 
-// Hash password
-export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 12;
-  return await bcrypt.hash(password, saltRounds);
-}
-
-// Verify password
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return await bcrypt.compare(password, hash);
+// Verify password (plain text comparison)
+export async function verifyPassword(password: string, storedPassword: string): Promise<boolean> {
+  return password === storedPassword;
 }
 
 // Simple session store (in production, use Redis or database)
