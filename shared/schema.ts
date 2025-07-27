@@ -10,6 +10,7 @@ export const users = pgTable("users", {
 
 export const sparkJobs = pgTable("spark_jobs", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
   userEmail: text("user_email").notNull(),
   applicationName: text("application_name").notNull().unique(),
   chatId: text("chat_id").notNull(),
@@ -21,6 +22,7 @@ export const sparkJobs = pgTable("spark_jobs", {
 
 export const icebergTables = pgTable("iceberg_tables", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
   tableName: text("table_name").notNull().unique(),
   tableJobType: text("table_job_type").notNull(),
   tableLocation: text("table_location").notNull(),
@@ -34,6 +36,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertSparkJobSchema = createInsertSchema(sparkJobs).omit({
   id: true,
+  userId: true,
 }).extend({
   userEmail: z.string().email().refine(
     (email) => email.endsWith("@vietinbank.vn"),
@@ -44,7 +47,22 @@ export const insertSparkJobSchema = createInsertSchema(sparkJobs).omit({
 
 export const insertIcebergTableSchema = createInsertSchema(icebergTables).omit({
   id: true,
+  userId: true,
 });
+
+// Login schema
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Admin user creation schema (username only, password will be generated)
+export const createUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").max(50, "Username too long"),
+});
+
+export type LoginCredentials = z.infer<typeof loginSchema>;
+export type CreateUserRequest = z.infer<typeof createUserSchema>;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;

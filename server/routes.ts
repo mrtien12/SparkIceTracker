@@ -1,21 +1,84 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertSparkJobSchema, insertIcebergTableSchema, type SparkJob, type IcebergTable } from "@shared/schema";
+import { insertSparkJobSchema, insertIcebergTableSchema, loginSchema, createUserSchema, type SparkJob, type IcebergTable } from "@shared/schema";
 import { z } from "zod";
+import { requireAuth, verifyPassword, createSession, deleteSession, getSession } from "./auth";
+import { createUserWithRandomPassword } from "./admin-utils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Spark Jobs routes
-  app.get("/api/spark-jobs", async (req, res) => {
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
     try {
-      const sparkJobs = await storage.getAllSparkJobs();
+      const { username, password } = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      const isValid = await verifyPassword(password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      const token = createSession(user.id, user.username);
+      res.json({ 
+        token, 
+        user: { 
+          id: user.id, 
+          username: user.username 
+        } 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", requireAuth, async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        deleteSession(token);
+      }
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  app.get("/api/auth/me", requireAuth, async (req, res) => {
+    res.json({ user: req.user });
+  });
+
+  // Admin route for creating users (should be protected in production)
+  app.post("/api/admin/create-user", async (req, res) => {
+    try {
+      const userData = createUserSchema.parse(req.body);
+      const result = await createUserWithRandomPassword(userData);
+      res.status(201).json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to create user" });
+    }
+  });
+
+  // Spark Jobs routes (protected)
+  app.get("/api/spark-jobs", requireAuth, async (req, res) => {
+    try {
+      const sparkJobs = await storage.getSparkJobsByUserId(req.user!.userId);
       res.json(sparkJobs);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch spark jobs" });
     }
   });
 
-  app.post("/api/spark-jobs", async (req, res) => {
+  app.post("/api/spark-jobs", requireAuth, async (req, res) => {
     try {
       const data = insertSparkJobSchema.parse(req.body);
       
@@ -25,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Application name already exists" });
       }
 
-      const sparkJob = await storage.createSparkJob(data);
+      const sparkJob = await storage.createSparkJob(data, req.user!.userId);
       res.status(201).json(sparkJob);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -35,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/spark-jobs/:id", async (req, res) => {
+  app.put("/api/spark-jobs/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const data = req.body;
@@ -55,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/spark-jobs/:id", async (req, res) => {
+  app.delete("/api/spark-jobs/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteSparkJob(id);
@@ -65,17 +128,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Iceberg Tables routes
-  app.get("/api/iceberg-tables", async (req, res) => {
+  // Iceberg Tables routes (protected)
+  app.get("/api/iceberg-tables", requireAuth, async (req, res) => {
     try {
-      const icebergTables = await storage.getAllIcebergTables();
+      const icebergTables = await storage.getIcebergTablesByUserId(req.user!.userId);
       res.json(icebergTables);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch iceberg tables" });
     }
   });
 
-  app.post("/api/iceberg-tables", async (req, res) => {
+  app.post("/api/iceberg-tables", requireAuth, async (req, res) => {
     try {
       const data = insertIcebergTableSchema.parse(req.body);
       
@@ -85,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Table name already exists" });
       }
 
-      const icebergTable = await storage.createIcebergTable(data);
+      const icebergTable = await storage.createIcebergTable(data, req.user!.userId);
       res.status(201).json(icebergTable);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -95,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/iceberg-tables/:id", async (req, res) => {
+  app.put("/api/iceberg-tables/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const data = req.body;
@@ -115,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/iceberg-tables/:id", async (req, res) => {
+  app.delete("/api/iceberg-tables/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteIcebergTable(id);

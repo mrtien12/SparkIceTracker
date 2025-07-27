@@ -9,16 +9,18 @@ export interface IStorage {
   
   // Spark Jobs
   getAllSparkJobs(): Promise<SparkJob[]>;
+  getSparkJobsByUserId(userId: number): Promise<SparkJob[]>;
   getSparkJobById(id: number): Promise<SparkJob | undefined>;
-  createSparkJob(sparkJob: InsertSparkJob): Promise<SparkJob>;
+  createSparkJob(sparkJob: InsertSparkJob, userId: number): Promise<SparkJob>;
   updateSparkJob(id: number, sparkJob: Partial<SparkJob>): Promise<SparkJob>;
   deleteSparkJob(id: number): Promise<void>;
   getSparkJobByApplicationName(applicationName: string): Promise<SparkJob | undefined>;
   
   // Iceberg Tables
   getAllIcebergTables(): Promise<IcebergTable[]>;
+  getIcebergTablesByUserId(userId: number): Promise<IcebergTable[]>;
   getIcebergTableById(id: number): Promise<IcebergTable | undefined>;
-  createIcebergTable(icebergTable: InsertIcebergTable): Promise<IcebergTable>;
+  createIcebergTable(icebergTable: InsertIcebergTable, userId: number): Promise<IcebergTable>;
   updateIcebergTable(id: number, icebergTable: Partial<IcebergTable>): Promise<IcebergTable>;
   deleteIcebergTable(id: number): Promise<void>;
   getIcebergTableByTableName(tableName: string): Promise<IcebergTable | undefined>;
@@ -48,15 +50,19 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(sparkJobs);
   }
 
+  async getSparkJobsByUserId(userId: number): Promise<SparkJob[]> {
+    return await db.select().from(sparkJobs).where(eq(sparkJobs.userId, userId));
+  }
+
   async getSparkJobById(id: number): Promise<SparkJob | undefined> {
     const [sparkJob] = await db.select().from(sparkJobs).where(eq(sparkJobs.id, id));
     return sparkJob || undefined;
   }
 
-  async createSparkJob(insertSparkJob: InsertSparkJob): Promise<SparkJob> {
+  async createSparkJob(insertSparkJob: InsertSparkJob, userId: number): Promise<SparkJob> {
     const [sparkJob] = await db
       .insert(sparkJobs)
-      .values(insertSparkJob)
+      .values({ ...insertSparkJob, userId })
       .returning();
     return sparkJob;
   }
@@ -89,10 +95,14 @@ export class DatabaseStorage implements IStorage {
     return icebergTable || undefined;
   }
 
-  async createIcebergTable(insertIcebergTable: InsertIcebergTable): Promise<IcebergTable> {
+  async getIcebergTablesByUserId(userId: number): Promise<IcebergTable[]> {
+    return await db.select().from(icebergTables).where(eq(icebergTables.userId, userId));
+  }
+
+  async createIcebergTable(insertIcebergTable: InsertIcebergTable, userId: number): Promise<IcebergTable> {
     const [icebergTable] = await db
       .insert(icebergTables)
-      .values(insertIcebergTable)
+      .values({ ...insertIcebergTable, userId })
       .returning();
     return icebergTable;
   }

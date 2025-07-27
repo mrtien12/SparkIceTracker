@@ -1,4 +1,6 @@
-import { Database, Zap, User } from "lucide-react";
+import { Database, Zap, User, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   activeSection: "spark-jobs" | "iceberg-tables";
@@ -6,6 +8,16 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <div className="w-72 bg-white shadow-lg border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
@@ -52,14 +64,24 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3 text-sm text-gray-500">
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-            <User size={14} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3 text-sm text-gray-500">
+            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+              <User size={14} />
+            </div>
+            <div>
+              <p className="font-medium">{user?.username}</p>
+              <p className="text-xs">VietinBank User</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">admin@vietinbank.vn</p>
-            <p className="text-xs">Administrator</p>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <LogOut size={16} />
+          </Button>
         </div>
       </div>
     </div>
