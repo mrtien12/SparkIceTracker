@@ -11,7 +11,7 @@ if (!process.env.DATABASE_URL) {
 
 // Use regular PostgreSQL connection for Docker environment
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || 'postgresql://vietin_user:vietin_password@localhost:5432/vietinbank_db',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 

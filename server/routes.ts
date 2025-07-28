@@ -81,13 +81,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/spark-jobs", requireAuth, async (req, res) => {
     try {
       const data = insertSparkJobSchema.parse(req.body);
-      
+      console.log(data);
       // Check if application name already exists
       const existingJob = await storage.getSparkJobByApplicationName(data.applicationName);
       if (existingJob) {
         return res.status(400).json({ message: "Application name already exists" });
       }
-
       const sparkJob = await storage.createSparkJob(data, req.user!.userId);
       res.status(201).json(sparkJob);
     } catch (error) {

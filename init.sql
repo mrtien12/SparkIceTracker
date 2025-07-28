@@ -3,6 +3,7 @@
 -- Create spark_jobs table
 CREATE TABLE IF NOT EXISTS spark_jobs (
     id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
     user_email TEXT NOT NULL,
     application_name TEXT NOT NULL UNIQUE,
     chat_id TEXT NOT NULL,
@@ -34,17 +35,17 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Insert sample data for demonstration
-INSERT INTO spark_jobs (user_email, application_name, chat_id, job_ram, job_core, job_executor, is_active) VALUES
-('admin@vietinbank.vn', 'ETL-Customer-Data', '12345678', 8, 4, 2, true),
-('analyst@vietinbank.vn', 'Risk-Assessment', '87654321', 16, 8, 4, true),
-('dev@vietinbank.vn', 'Transaction-Processing', '11223344', 4, 2, 1, false)
-ON CONFLICT (application_name) DO NOTHING;
+-- INSERT INTO spark_jobs (user_email, application_name, chat_id, job_ram, job_core, job_executor, is_active) VALUES
+-- ('admin@vietinbank.vn', 'ETL-Customer-Data', '12345678', 8, 4, 2, true),
+-- ('analyst@vietinbank.vn', 'Risk-Assessment', '87654321', 16, 8, 4, true),
+-- ('dev@vietinbank.vn', 'Transaction-Processing', '11223344', 4, 2, 1, false)
+-- ON CONFLICT (application_name) DO NOTHING;
 
-INSERT INTO iceberg_tables (table_name, table_job_type, table_location, is_active) VALUES
-('customer_transactions', 'STREAMING', 's3://vietin-data-lake/tables/customer_transactions', true),
-('risk_metrics', 'BATCH', 's3://vietin-data-lake/tables/risk_metrics', true),
-('account_balances', 'INCREMENTAL', 's3://vietin-data-lake/tables/account_balances', false)
-ON CONFLICT (table_name) DO NOTHING;
+-- INSERT INTO iceberg_tables (table_name, table_job_type, table_location, is_active) VALUES
+-- ('customer_transactions', 'STREAMING', 's3://vietin-data-lake/tables/customer_transactions', true),
+-- ('risk_metrics', 'BATCH', 's3://vietin-daa-lake/tables/risk_metrics', true),
+-- ('account_balances', 'INCREMENTAL', 's3://vietin-data-lake/tables/account_balances', false)
+-- ON CONFLICT (table_name) DO NOTHING;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_spark_jobs_email ON spark_jobs(user_email);
